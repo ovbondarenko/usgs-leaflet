@@ -14,12 +14,17 @@ d3.json(queryUrl , d => {
 
   color = d3.scaleLinear()
   .domain([0, sortedMag.length-1])
-  .range(["red", "yellow"]);
+  .range(["yellow", "red"]);
   console.log(sortedMag.indexOf(-0.66))
 
   function getColor(d, val) {
-    console.log(d);
+    console.log(d, color(val.indexOf(d)));
     return color(val.indexOf(d))
+  }
+
+  function getSize(d) {
+    if (d<0) {return d*(-5)}
+    else return d*5
   }
 
 
@@ -27,11 +32,15 @@ d3.json(queryUrl , d => {
   function onEachFeature(feature, layer) {
 
     layer.bindPopup("<h3>" + feature.properties.place +
-      "</h3><hr><p>" + new Date(feature.properties.time) + "</p>");
+      "</h3><hr><p>" + new Date(feature.properties.time) + "</p>"+
+      "<p> Magnitude: "+ feature.properties.mag + "</p>");
   }
 
   function createCustomMarkers(feature, latlng) {
-    return new L.CircleMarker(latlng, {radius: 10, fillOpacity: 0.85, color: getColor(feature.properties.mag, sortedMag)});
+    return new L.CircleMarker(latlng, {radius: getSize(feature.properties.mag), 
+      fillOpacity: 0.6, 
+      weight: 1,
+      color: getColor(feature.properties.mag, sortedMag)});
   }
 
 //builds our geojson layer
@@ -39,15 +48,6 @@ d3.json(queryUrl , d => {
     pointToLayer: createCustomMarkers,
     onEachFeature: onEachFeature
   });
-
-  var geojsonMarkerOptions = {
-    radius: 8,
-    fillColor: "#ff7800",
-    color: "#000",
-    weight: 1,
-    opacity: 1,
-    fillOpacity: 0.8
-  }
 
   createMap(earthquakes)
 
@@ -68,10 +68,10 @@ var dark = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?acc
 function createMap(some_layer) {
 
   // Define streetmap and darkmap layers
-  var streetmap = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+  var satellite = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
     attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
     maxZoom: 18,
-    id: "mapbox.streets-basic",
+    id: "mapbox.satellite",
     accessToken: API_KEY
   });
 
@@ -84,7 +84,7 @@ function createMap(some_layer) {
 
   // Define a baseMaps object to hold our base layers
   var baseMaps = {
-    "Street Map": streetmap,
+    "Street Map": satellite,
     "Dark Map": darkmap
   };
 
@@ -99,7 +99,7 @@ function createMap(some_layer) {
       37.09, -95.71
     ],
     zoom: 5,
-    layers: [streetmap, some_layer]
+    layers: [satellite, some_layer]
   });
 
   // Create a layer control
@@ -108,7 +108,5 @@ function createMap(some_layer) {
   L.control.layers(baseMaps, overlayMaps, {
     collapsed: false
   }).addTo(myMap);
-
-  
 
 };
